@@ -1,11 +1,5 @@
 import type { Field } from "@/interfaces/form";
-import type {
-  ControllerRenderProps,
-  FieldValues,
-  UseFormReturn,
-  PathValue,
-  Path,
-} from "react-hook-form";
+import type { ControllerRenderProps, UseFormReturn } from "react-hook-form";
 import {
   Select,
   SelectContent,
@@ -16,17 +10,13 @@ import {
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 
-interface Props<T extends FieldValues> {
-  field: ControllerRenderProps<T>;
-  fieldRendered: Field<T>;
-  form: UseFormReturn<T>;
+interface Props {
+  field: ControllerRenderProps;
+  fieldRendered: Field;
+  form: UseFormReturn;
 }
 
-function DynamicField<T extends FieldValues>({
-  field,
-  fieldRendered,
-  form,
-}: Props<T>) {
+function DynamicField({ field, fieldRendered, form }: Props) {
   switch (fieldRendered.type) {
     case "select":
       return (
@@ -67,10 +57,7 @@ function DynamicField<T extends FieldValues>({
                 ? [...current, { value: option, amount: 1 }]
                 : current.filter((item) => item.value !== option);
 
-              form.setValue(
-                fieldRendered.field,
-                newValue as PathValue<T, Path<T>>
-              );
+              form.setValue(fieldRendered.field, newValue);
             };
 
             return (
@@ -104,10 +91,7 @@ function DynamicField<T extends FieldValues>({
                             }
                           : item
                       );
-                      form.setValue(
-                        fieldRendered.field,
-                        updated as PathValue<T, Path<T>>
-                      );
+                      form.setValue(fieldRendered.field, updated);
                     }}
                   />
                 )}
@@ -135,41 +119,6 @@ function DynamicField<T extends FieldValues>({
           min={new Date().toDateString()}
           {...field}
         />
-      );
-
-    case "select_and_amount":
-      return (
-        <div className="flex gap-2 w-full">
-          <Select
-            onValueChange={(value) =>
-              field.onChange({ ...field.value, option: value })
-            }
-            defaultValue={field.value?.option || ""}
-          >
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="Selecciona una opción" />
-            </SelectTrigger>
-            <SelectContent className="w-full">
-              {fieldRendered.options?.map((opt) => (
-                <SelectItem key={opt} value={opt}>
-                  {opt}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Input
-            type="number"
-            value={field.value?.amount || ""}
-            onChange={(e) =>
-              field.onChange({
-                ...field.value,
-                amount: parseInt(e.target.value) || "",
-              })
-            }
-            placeholder="Cantidad"
-            className="w-32"
-          />
-        </div>
       );
 
     default:

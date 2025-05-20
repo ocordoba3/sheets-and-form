@@ -1,5 +1,4 @@
 import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
 import {
   Form,
   FormField,
@@ -10,76 +9,84 @@ import {
 } from "@/components/ui/form";
 
 import { Button } from "@/components/ui/button";
-import { schema, type FormDataSchema } from "@/utils/schemas/form";
-import { formStructure } from "@/utils/consts/formStructure";
 import DynamicField from "@/components/DynamicField";
-import {
-  Accordion,
-  AccordionItem,
-  AccordionTrigger,
-  AccordionContent,
-} from "@/components/ui/accordion";
+import { Progress } from "@/components/ui/progress";
+import { FormStructure } from "@/utils/consts/FormStructure";
+import { useFetchQuestions } from "@/hooks/useFetchQuestions";
+import { useEffect, useMemo, useState } from "react";
+import { cn } from "@/lib/utils";
 
 const FormView = () => {
-  const form = useForm<FormDataSchema>({
-    resolver: zodResolver(schema),
-  });
-  //   const formValues = form.watch();
+  const form = useForm();
+  const formData = form.watch();
+  const { questions, isLoading } = useFetchQuestions();
+  const [progress, setProgress] = useState(10);
+
+  const formStructure = useMemo(() => FormStructure(questions), [questions]);
+
+  useEffect(() => {
+    console.log(formData);
+  }, [formData]);
 
   const onSubmit = async () => {
-    const formData = new FormData();
-    // const { nombre, direccion, ciudad, telefono } = formValues;
+    console.log({ usuario: "oecordoba8@gmail.com", ...formData });
 
-    // ⚠️ Reemplaza estos entry.XYZ con los reales de tu Google Form
-    // formData.append("entry.1234567890", nombre);
-    // formData.append("entry.2345678901", direccion);
-    // formData.append("entry.3456789012", ciudad);
-    // formData.append("entry.4567890123", telefono);
-
-    try {
-      await fetch(
-        "https://docs.google.com/forms/d/e/TU_ID_DE_FORMULARIO/formResponse",
-        {
-          method: "POST",
-          mode: "no-cors",
-          body: formData,
-        }
-      );
-      alert("Formulario enviado con éxito");
-      form.reset();
-    } catch (error) {
-      console.error(error);
-      alert("Error al enviar el formulario");
-    }
+    // await fetch("/api", {
+    //   method: "POST",
+    //   body: JSON.stringify({ usuario: "oecordoba8@gmail.com", ...formData }),
+    //   headers: { "Content-Type": "application/json" },
+    // })
+    //   .then((res) => res.json())
+    //   .then(() => {
+    //     alert("Guardado correctamente");
+    //     form.reset();
+    //   })
+    //   .catch((err) => {
+    //     console.error(err);
+    //     alert("Error al guardar");
+    //   });
   };
+
+  useEffect(() => {
+    if (progress === 100 || !isLoading) return;
+
+    const timer = setTimeout(() => setProgress((prev) => prev + 10), 500);
+    return () => clearTimeout(timer);
+  }, [progress, isLoading]);
+
+  if (isLoading) {
+    return (
+      <div className="w-full sm:w-1/2 md:w-1/3 flex flex-wrap h-[80vh] place-content-center p-4 md:p-0">
+        <Progress value={progress} className="w-full" />
+      </div>
+    );
+  }
+
   return (
-    <div className="w-full p-4 sm:w-1/2 md:1/3 md:p-0 grid">
-      <h1 className="text-3xl font-bold mb-2">
-        Solicitud Requerimientos Logísticos
-      </h1>
-      <p className="tex-sm text-gray-600 mb-4">
-        Convenio C01.PCCNTR.7839455 | IPES - SIEC SEM SAS
+    <div className="w-full grid content-start grid-rows-[auto_1fr_auto] p-4">
+      <p className="w-full mb-4">
+        (<span className="text-red-500">*</span>) Campos requeridos
       </p>
       <Form {...form}>
-        <Accordion type="multiple">
+        <section className="grid grid-cols-1 md:grid-cols-[40%_60%] gap-4 max-w-[97vw]">
           {formStructure.map((section, idx) => (
-            <AccordionItem
-              value={`item-${idx}`}
-              className="border rounded-t-md mb-8"
-              key={section.sectionTitle}
-            >
-              <AccordionTrigger className="text-2xl font-bold rounded-t-md rounded-b-none bg-blue-200 px-4 py-2 w-full text-start">
+            <div key={`item-${idx}`} className="">
+              <h2 className="text-2xl font-bold bg-black text-white px-2 md:px-8 py-2 w-full text-start">
                 {section.sectionTitle}
-              </AccordionTrigger>
-              <AccordionContent className="p-4">
-                {section.fields.map((fieldRendered) => (
+              </h2>
+              <div className="p-2 md:p-8 md:max-h-[75vh] md:overflow-y-auto">
+                {section.fields.map((fieldRendered, idx) => (
                   <FormField
                     key={fieldRendered.field}
                     control={form.control}
-                    name={fieldRendered.field as keyof FormDataSchema}
+                    name={fieldRendered.field}
                     render={({ field }) => (
-                      <FormItem className="mb-8">
-                        <FormLabel className="text-xl">
+                      <FormItem
+                        className={cn({
+                          "mb-8": idx + 1 < section.fields.length,
+                        })}
+                      >
+                        <FormLabel className="text-xl mb-2">
                           {fieldRendered.label}
                           {fieldRendered.isRequired && (
                             <span className="font-bold text-red-500">*</span>
@@ -97,20 +104,20 @@ const FormView = () => {
                     )}
                   />
                 ))}
-              </AccordionContent>
-            </AccordionItem>
+              </div>
+            </div>
           ))}
-        </Accordion>
-
-        <Button
-          className="bg-blue-900 text-white text-xl w-fit place-self-end disabled:bg-gray-300 disabled:text-gray-900 disabled:cursor-not-allowed!"
-          type="button"
-          onClick={() => onSubmit()}
-          disabled={!form.formState.isValid || form.formState.isSubmitting}
-        >
-          Enviar
-        </Button>
+        </section>
       </Form>
+
+      <Button
+        className="md:absolute md:top-6 md:right-8 bg-black text-white text-xl w-fit place-self-end disabled:bg-gray-300 disabled:text-gray-900 disabled:cursor-not-allowed!"
+        type="button"
+        onClick={() => onSubmit()}
+        // disabled={!form.formState.isValid || form.formState.isSubmitting}
+      >
+        Enviar
+      </Button>
     </div>
   );
 };

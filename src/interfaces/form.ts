@@ -1,12 +1,10 @@
-import type { Path } from "react-hook-form";
-
-export interface FormStructure<T> {
+export interface Form {
   sectionTitle: string;
-  fields: Field<T>[];
+  fields: Field[];
 }
 
-export interface Field<T> {
-  field: Path<T>;
+export interface Field {
+  field: string;
   label: string;
   type: FieldType;
   isRequired: boolean;
@@ -17,5 +15,4 @@ export type FieldType =
   | "select"
   | "date"
   | "datetime"
-  | "select_and_amount"
   | "multi_select_and_amount";
