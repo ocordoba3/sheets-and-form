@@ -1,6 +1,6 @@
 import type { FieldType, Form } from "@/interfaces/form";
 import type { Question } from "@/interfaces/questions";
-import { toSnakeCase } from "../helpers";
+import { toSnakeCase } from "@/utils/helpers";
 
 export const FormStructure = (questions: {
   [key: string]: Question[];

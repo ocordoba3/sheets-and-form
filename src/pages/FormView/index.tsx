@@ -11,7 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 import DynamicField from "@/components/DynamicField";
 import { Progress } from "@/components/ui/progress";
-import { FormStructure } from "@/utils/consts/FormStructure";
+import { FormStructure } from "@/components/FormStructure";
 import { useFetchQuestions } from "@/hooks/useFetchQuestions";
 import { useEffect, useMemo, useState } from "react";
 import { cn } from "@/lib/utils";
