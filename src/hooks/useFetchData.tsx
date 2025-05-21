@@ -1,17 +1,19 @@
 import type { Question } from "@/interfaces/questions";
-import { useEffect, useState } from "react";
+import type { Response } from "@/interfaces/response";
+import useStore from "@/store";
+import { useEffect } from "react";
 
-export function useFetchQuestions() {
-  const [questions, setQuestions] = useState<{ [key: string]: Question[] }>({});
-  const [isLoading, setIsLoading] = useState<boolean>(false);
+export function useFetchData() {
+  const { setQuestions, setUsers, setIsLoading } = useStore();
 
   useEffect(() => {
     setIsLoading(true);
-    fetch("/api?path=questions")
+    fetch("/api")
       .then((res) => res.json())
-      .then((data: Question[]) => {
-        const sortedData = data.sort((a, b) => a.order - b.order);
-        const groupedQuestions = sortedData.reduce(
+      .then((data: Response) => {
+        const { questions, users } = data;
+        const sortedQuestions = questions.sort((a, b) => a.order - b.order);
+        const groupedQuestions = sortedQuestions.reduce(
           (acc: { [key: string]: Question[] }, item) => {
             const key = item.category as keyof Question;
             if (!acc[key]) {
@@ -23,12 +25,11 @@ export function useFetchQuestions() {
           {}
         );
         setQuestions(groupedQuestions);
+        setUsers(users);
         setIsLoading(false);
       })
       .catch((err) => {
         console.error(err);
       });
-  }, []);
-
-  return { questions, isLoading };
+  }, [setIsLoading, setQuestions, setUsers]);
 }

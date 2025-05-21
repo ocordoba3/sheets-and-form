@@ -3,3 +3,7 @@ export interface Question {
   category: string;
   service: string;
 }
+
+export interface GroupedQuestion {
+  [key: string]: Question[];
+}
