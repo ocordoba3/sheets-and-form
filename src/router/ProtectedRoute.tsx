@@ -7,7 +7,9 @@ interface Props {
 
 const ProtectedRoute = ({ component }: Props) => {
   const location = useLocation();
-  const isAuthenticated = localStorage.getItem("email");
+  const isAuthenticated =
+    sessionStorage.getItem(btoa("email")) ??
+    localStorage.getItem(btoa("email"));
 
   if (!isAuthenticated && location.pathname !== "/login") {
     return <Navigate to="/login" />;

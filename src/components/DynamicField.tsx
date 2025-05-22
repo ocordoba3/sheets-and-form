@@ -10,6 +10,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { DatePicker } from "./ui/datepicker";
+import { memo } from "react";
 
 interface Props {
   field: ControllerRenderProps;
@@ -166,4 +167,4 @@ function DynamicField({ field, fieldRendered, form }: Props) {
   }
 }
 
-export default DynamicField;
+export default memo(DynamicField);
