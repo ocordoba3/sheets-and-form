@@ -10,7 +10,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { DatePicker } from "./ui/datepicker";
-import { memo } from "react";
+import { memo, useCallback, useMemo } from "react";
+import { DateTimePicker } from "./ui/datetimepicker";
 
 interface Props {
   field: ControllerRenderProps;
@@ -19,10 +20,74 @@ interface Props {
 }
 
 function DynamicField({ field, fieldRendered, form }: Props) {
+  const selectedItems = useMemo(() => field.value || [], [field.value]);
+
+  const isNingunoSelected = useMemo(() => {
+    return (
+      fieldRendered.type === "multi_select_and_amount" &&
+      selectedItems.some((item: { value: string }) => item.value === "Ninguno")
+    );
+  }, [fieldRendered.type, selectedItems]);
+
+  const handleCheckboxChange = useCallback(
+    (option: string, checked: boolean) => {
+      if (checked) {
+        if (option === "Ninguno") {
+          form.setValue(fieldRendered.field, [{ value: "Ninguno" }]);
+          return;
+        }
+
+        // Filtrar "Ninguno" si otro valor es seleccionado
+        const updatedItems = selectedItems.filter(
+          (item: { value: string }) => item.value !== "Ninguno"
+        );
+
+        // Agregar la nueva opción
+        form.setValue(fieldRendered.field, [
+          ...updatedItems,
+          {
+            value: option,
+            amount: option !== "Otro" ? 1 : undefined,
+            description: option === "Otro" ? "" : undefined,
+          },
+        ]);
+      } else {
+        // Remover el elemento del array
+        form.setValue(
+          fieldRendered.field,
+          selectedItems.filter(
+            (item: { value: string }) => item.value !== option
+          )
+        );
+      }
+    },
+    [selectedItems, form, fieldRendered.field]
+  );
+
+  const handleInputChange = useCallback(
+    (
+      option: string,
+      fieldKey: "description" | "amount",
+      value: string | number
+    ) => {
+      const current = form.getValues(fieldRendered.field) || [];
+      const updated = current.map((item: { value: string }) =>
+        item.value === option ? { ...item, [fieldKey]: value } : item
+      );
+
+      form.setValue(fieldRendered.field, updated);
+    },
+    [form, fieldRendered.field]
+  );
+
   switch (fieldRendered.type) {
     case "select":
       return (
-        <Select onValueChange={field.onChange} defaultValue={field.value}>
+        <Select
+          name={field.name}
+          onValueChange={field.onChange}
+          defaultValue={field.value}
+        >
           <SelectTrigger className="w-full">
             <SelectValue placeholder="Selecciona una opción" />
           </SelectTrigger>
@@ -38,46 +103,11 @@ function DynamicField({ field, fieldRendered, form }: Props) {
 
     case "multi_select_and_amount":
       return (
-        <div className="space-y-2">
+        <div className="space-y-4">
           {fieldRendered.options?.map((option) => {
-            const selectedItems = form.watch(fieldRendered.field) || [];
-            const isNingunoSelected = selectedItems.some(
-              (item: { value: string }) => item.value === "Ninguno"
-            );
             const selectedItem = selectedItems.find(
               (item: { value: string }) => item.value === option
             );
-
-            const handleCheckboxChange = (checked: boolean) => {
-              let current = form.getValues(fieldRendered.field) || [];
-
-              if (checked) {
-                if (option === "Ninguno") {
-                  // Solo "Ninguno"
-                  form.setValue(fieldRendered.field, [{ value: "Ninguno" }]);
-                  return;
-                }
-
-                // Si se selecciona otro valor, elimina "Ninguno"
-                current = current.filter(
-                  (item: { value: string }) => item.value !== "Ninguno"
-                );
-
-                form.setValue(fieldRendered.field, [
-                  ...current,
-                  option === "Otro"
-                    ? { value: option, description: "" }
-                    : { value: option, amount: 1 },
-                ]);
-              } else {
-                form.setValue(
-                  fieldRendered.field,
-                  current.filter(
-                    (item: { value: string }) => item.value !== option
-                  )
-                );
-              }
-            };
 
             return (
               <div key={option} className="flex flex-col gap-1">
@@ -85,11 +115,13 @@ function DynamicField({ field, fieldRendered, form }: Props) {
                   <Checkbox
                     id={`${fieldRendered.field}-${option}`}
                     checked={!!selectedItem}
-                    onCheckedChange={handleCheckboxChange}
+                    onCheckedChange={(checked) =>
+                      handleCheckboxChange(option, Boolean(checked))
+                    }
                   />
                   <label
                     htmlFor={`${fieldRendered.field}-${option}`}
-                    className="text-sm"
+                    className="text-base"
                   >
                     {option}
                   </label>
@@ -103,17 +135,13 @@ function DynamicField({ field, fieldRendered, form }: Props) {
                           className="w-full"
                           placeholder="Especifica"
                           value={selectedItem.description || ""}
-                          onChange={(e) => {
-                            const current =
-                              form.getValues(fieldRendered.field) || [];
-                            const updated = current.map(
-                              (item: { value: string }) =>
-                                item.value === option
-                                  ? { ...item, description: e.target.value }
-                                  : item
-                            );
-                            form.setValue(fieldRendered.field, updated);
-                          }}
+                          onChange={(e) =>
+                            handleInputChange(
+                              option,
+                              "description",
+                              e.target.value
+                            )
+                          }
                         />
                       ) : option !== "Ninguno" ? (
                         <Input
@@ -153,14 +181,7 @@ function DynamicField({ field, fieldRendered, form }: Props) {
       return <DatePicker field={field} />;
 
     case "datetime":
-      return (
-        <Input
-          className="w-full"
-          type="datetime-local"
-          min={new Date().toDateString()}
-          {...field}
-        />
-      );
+      return <DateTimePicker field={field} />;
 
     default:
       return <Input {...field} />;

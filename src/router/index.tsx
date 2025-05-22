@@ -11,6 +11,10 @@ const router = createBrowserRouter([
     element: <App />,
     children: [
       {
+        index: true,
+        element: <Navigate to={PATHS.login} replace />,
+      },
+      {
         path: PATHS.form,
         element: <ProtectedRoute component={<FormView />} />,
       },
@@ -21,7 +25,7 @@ const router = createBrowserRouter([
     ],
   },
   {
-    path: "*",
+    path: "**",
     element: <Navigate to={PATHS.login} />,
   },
 ]);
